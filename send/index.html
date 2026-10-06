@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Send roster</title>
+<style>
+  :root { color-scheme: dark; --bg: #0f1318; --panel: #161c23; --ink: #eef2f6; --dim: #8a95a2; --line: #252d37; --blue: #4da3ff; --ok: #3ddc84; --err: #ff6b6b; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 system-ui, -apple-system, sans-serif; padding: 20px 16px 32px; }
+  main { max-width: 640px; margin: 0 auto; display: grid; gap: 14px; }
+  h1 { margin: 0; font-size: 22px; }
+  p { margin: 0; color: var(--dim); font-size: 15px; }
+  textarea, input { width: 100%; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 12px; font: 15px system-ui, sans-serif; }
+  textarea { height: 40vh; font: 13px ui-monospace, monospace; }
+  .row { display: flex; gap: 10px; }
+  button { flex: 1; padding: 14px; font: 600 17px system-ui, sans-serif; border: 0; border-radius: 10px; background: #2a323c; color: var(--ink); }
+  button.primary { background: var(--blue); color: #fff; }
+  button:disabled { opacity: .5; }
+  #result { font-size: 16px; min-height: 1.4em; }
+  .ok { color: var(--ok); } .err { color: var(--err); }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 10px; }
+  a { color: var(--blue); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Send roster</h1>
+
+  <section class="card" id="keyCard" hidden>
+    <p>Enter your upload code once. This device will remember it.</p>
+    <input id="key" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="xxxx-xxxx">
+    <button class="primary" id="saveKey">Save code</button>
+  </section>
+
+  <p id="help">Expand every arrow on the roster, Select All, Copy, then paste here. Or use the Send to Tracker shortcut.</p>
+  <textarea id="text" placeholder="Paste roster here…"></textarea>
+  <div class="row">
+    <button id="paste">Paste</button>
+    <button class="primary" id="send">Send</button>
+  </div>
+  <div id="result"></div>
+  <p><a href="#" id="changeKey">Change upload code</a></p>
+</main>
+
+<script>
+  const API = 'https://script.google.com/macros/s/AKfycbx4Db9G0yNxRBrbKNjRCRj6GRJlaXEJvg4JlPdUpvfL2bvQBpsEDKz8l8kt49t_tOHW2g/exec';
+  const $ = id => document.getElementById(id);
+  const store = {
+    get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} }
+  };
+  const show = (msg, cls) => { $('result').textContent = msg; $('result').className = cls || ''; };
+
+  function needKey(on) { $('keyCard').hidden = !on; if (on) $('key').focus(); }
+
+  $('saveKey').onclick = () => {
+    const k = $('key').value.trim().toLowerCase();
+    if (!/^[a-z0-9]{4}-[a-z0-9]{4}$/.test(k)) return show('The code looks like xxxx-xxxx. Check it and try again.', 'err');
+    store.set('upload-key', k);
+    needKey(false);
+    show('Code saved.', 'ok');
+    if ($('text').value.trim()) send();
+  };
+  $('changeKey').onclick = e => { e.preventDefault(); $('key').value = store.get('upload-key') || ''; needKey(true); };
+
+  $('paste').onclick = async () => {
+    try { $('text').value = await navigator.clipboard.readText(); }
+    catch (e) { show('Tap in the box and choose Paste instead.', 'err'); }
+  };
+
+  async function send() {
+    const key = store.get('upload-key');
+    if (!key) { needKey(true); return show('Enter your upload code first.', 'err'); }
+    const text = $('text').value;
+    if (!text.trim()) return show('Nothing to send yet. Paste the roster first.', 'err');
+    $('send').disabled = true;
+    show('Sending…');
+    try {
+      const res = await fetch(API, { method: 'POST', body: JSON.stringify({ key: key, text: text }) });
+      const r = await res.json();
+      if (r.ok) show('Sent ✓ ' + r.chars.toLocaleString() + ' characters' + (r.summary ? ' · ' + r.summary : ''), 'ok');
+      else if (r.error === 'bad key') { needKey(true); show('That upload code didn’t work. Re-enter it.', 'err'); }
+      else show('Not sent: ' + r.error, 'err');
+    } catch (e) {
+      show('Couldn’t reach the tracker. Check the connection and tap Send again.', 'err');
+    }
+    $('send').disabled = false;
+  }
+  $('send').onclick = send;
+
+  // The shortcut opens this page as …/send#<roster text>. The text stays on this device until sent.
+  if (location.hash.length > 1) {
+    let t = location.hash.slice(1);
+    try { t = decodeURIComponent(t); } catch (e) {}
+    $('text').value = t;
+    history.replaceState(null, '', location.pathname);
+  }
+  if (!store.get('upload-key')) needKey(true);
+  else if ($('text').value.trim()) send();
+</script>
+</body>
+</html>
