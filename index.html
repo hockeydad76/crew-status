@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Where's Dad?</title>
+<meta name="theme-color" content="#0f1318">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Where's Dad?">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..100,400..800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0f1318; --panel: #161c23; --ink: #eef2f6; --dim: #8a95a2; --line: #252d37;
+    --accent: #4da3ff;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); }
+  body {
+    font-family: "Archivo", system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    padding: calc(env(safe-area-inset-top, 0px) + 14px) 16px calc(env(safe-area-inset-bottom, 0px) + 20px);
+  }
+  main { max-width: 520px; margin: 0 auto; display: grid; gap: 12px; }
+
+  .top { display: flex; justify-content: space-between; align-items: baseline; padding: 2px 2px 4px; }
+  .top h1 { margin: 0; font-size: 15px; font-weight: 700; letter-spacing: .02em; color: var(--dim); }
+  .top span { font: 400 12px "IBM Plex Mono", ui-monospace, monospace; color: var(--dim); }
+
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+  .status {
+    position: relative; overflow: hidden; padding: 20px 18px 18px;
+    background: radial-gradient(140% 120% at 0% 0%, color-mix(in srgb, var(--accent) 20%, var(--panel)), var(--panel) 65%);
+    display: grid; gap: 12px;
+  }
+  .status::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--accent); }
+  .headline { display: flex; gap: 14px; align-items: center; }
+  .icon {
+    flex: none; width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center;
+    background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--accent);
+  }
+  .icon svg { width: 28px; height: 28px; }
+  .headline h2 { margin: 0; font-size: 26px; line-height: 1.1; font-weight: 720; font-stretch: 88%; text-wrap: balance; }
+  .headline h2 b { color: var(--accent); font-weight: 780; }
+  .lines { display: grid; gap: 4px; font-size: 15.5px; color: var(--dim); line-height: 1.4; }
+  .lines .b { color: var(--ink); font-weight: 600; }
+  .lines .a { color: var(--accent); font-weight: 650; }
+
+  .route { display: grid; gap: 8px; }
+  .track { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; }
+  .code { font: 600 17px "IBM Plex Mono", ui-monospace, monospace; letter-spacing: .04em; }
+  .line { position: relative; height: 4px; background: var(--line); border-radius: 4px; }
+  .line .done { position: absolute; inset: 0 auto 0 0; background: var(--accent); border-radius: 4px; }
+  .line .craft { position: absolute; top: 50%; width: 24px; height: 24px; transform: translate(-50%, -50%); color: var(--accent); }
+  .line .craft svg { width: 100%; height: 100%; }
+  .times { display: flex; justify-content: space-between; gap: 12px; font-size: 13.5px; color: var(--dim); }
+  .times span:last-child { text-align: right; }
+  .tag {
+    justify-self: start; display: inline-flex; align-items: center; gap: 7px; max-width: 100%;
+    font: 500 11.5px "IBM Plex Mono", ui-monospace, monospace; color: var(--dim);
+    border: 1px solid var(--line); border-radius: 99px; padding: 4px 10px;
+  }
+  .tag i { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--dim); }
+  .tag.live i { background: #3ddc84; box-shadow: 0 0 0 3px rgba(61,220,132,.2); }
+
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .label { font: 600 11px "IBM Plex Mono", ui-monospace, monospace; letter-spacing: .14em; color: var(--dim); text-transform: uppercase; margin-bottom: 6px; }
+  .next-title { font-size: 18px; font-weight: 680; font-stretch: 90%; line-height: 1.2; }
+  .sub { font-size: 13.5px; color: var(--dim); margin-top: 3px; line-height: 1.35; }
+  .count { font-size: 34px; font-weight: 760; font-stretch: 80%; line-height: 1; color: #3ddc84; font-variant-numeric: tabular-nums; }
+  .count small { font-size: .5em; font-weight: 600; color: var(--dim); margin: 0 4px 0 1px; }
+
+  .note { font-size: 17px; font-style: italic; font-weight: 560; display: flex; gap: 10px; align-items: center; }
+  .note::before { content: "\201C"; font: 700 34px/0.6 Georgia, serif; color: var(--accent); }
+
+  .msg { text-align: center; color: var(--dim); font-size: 15px; line-height: 1.5; padding: 40px 12px; }
+  .msg strong { display: block; color: var(--ink); font-size: 19px; margin-bottom: 6px; }
+  .warn { font-size: 12.5px; color: #ffb454; text-align: center; }
+
+  @media (max-width: 359px) { .pair { grid-template-columns: 1fr; } }
+  @media (prefers-reduced-motion: no-preference) { .line .done, .line .craft { transition: width .6s ease, left .6s ease; } }
+</style>
+</head>
+<body>
+<main>
+  <div class="top"><h1 id="title"></h1><span id="ago"></span></div>
+  <div id="app"><div class="msg">Loading…</div></div>
+  <div class="warn" id="warn" hidden></div>
+</main>
+
+<script>
+  // Status comes from the Crew Tracker Apps Script, read with this phone's view-only key.
+  const API = 'https://script.google.com/macros/s/AKfycbx4Db9G0yNxRBrbKNjRCRj6GRJlaXEJvg4JlPdUpvfL2bvQBpsEDKz8l8kt49t_tOHW2g/exec';
+  const REFRESH_MS = 60e3;
+
+  const ICONS = {
+    home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>',
+    car: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 16v-4l2-5h12l2 5v4z"/><path d="M4 12h16"/><circle cx="7.5" cy="16.5" r="1.5" fill="currentColor"/><circle cx="16.5" cy="16.5" r="1.5" fill="currentColor"/></svg>',
+    plane: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 15.5v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V8.5l-8 5v2l8-2.5V18l-2 1.5V21l3.5-1 3.5 1v-1.5L13 18v-5z" transform="rotate(90 12 12)"/></svg>',
+    bed: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 18V6"/><path d="M3 14h18v4"/><path d="M21 14v-2a3 3 0 0 0-3-3h-7v5"/><circle cx="7" cy="11" r="2"/></svg>',
+    seat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M7 3v10a2 2 0 0 0 2 2h7l2 6"/><path d="M9 15l-2 6"/><path d="M11 10h6"/></svg>',
+    clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+    tower: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 6h12l-2 5H8z"/><path d="M9 11l-1 10h8l-1-10"/><path d="M12 3v3"/></svg>',
+    book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5"/><path d="M9 8h6"/></svg>',
+    sim: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 9h16l-2 8H6z"/><path d="M8 17l-2 4M16 17l2 4M12 17v4"/><path d="M8 9V6h8v3"/></svg>',
+    lunch: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10"/><path d="M17 21V3c-2 1-3 4-3 7h3"/></svg>',
+    palm: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21c0-6 1-9 2-12"/><path d="M14 9c-1-3-4-4-8-3 2 0 5 1 8 3z"/><path d="M14 9c2-3 5-3 8-1-3-1-5 0-8 1z"/><path d="M14 9c0-3 2-5 5-6-2 2-3 4-5 6z"/><path d="M5 21h14"/></svg>',
+    phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>'
+  };
+
+  const $ = id => document.getElementById(id);
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const store = {
+    get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} }
+  };
+
+  const key = new URLSearchParams(location.search).get('k') || store.get('wd-key');
+  if (key) store.set('wd-key', key);
+  setTitle(store.get('wd-title'));
+
+  let data = null, fetchedAt = 0;
+
+  // Name the page (and the installed app) after whoever this link is for.
+  function setTitle(title) {
+    if (!title) return;
+    $('title').textContent = title;
+    document.title = title;
+    document.querySelector('meta[name="apple-mobile-web-app-title"]').content = title;
+    const manifest = /Brian/.test(title) ? 'manifest-brian.webmanifest' : 'manifest.webmanifest';
+    const link = document.querySelector('link[rel="manifest"]');
+    if (!link.href.endsWith(manifest)) link.href = manifest;
+  }
+
+  function render() {
+    if (!data) return;
+    setTitle(data.title);
+    document.documentElement.style.setProperty('--accent', data.color);
+    const line = parts => parts.map(([t, st]) => st ? '<span class="' + st + '">' + esc(t) + '</span>' : esc(t)).join('');
+    const r = data.route;
+    let html =
+      '<section class="card status">' +
+        '<div class="headline"><div class="icon">' + (ICONS[data.icon] || ICONS.home) + '</div>' +
+        '<h2>' + esc(data.headline.text) + '<b>' + esc(data.headline.em) + '</b></h2></div>' +
+        (data.lines.length ? '<div class="lines">' + data.lines.map(l => '<div>' + line(l) + '</div>').join('') + '</div>' : '');
+    if (r) {
+      const pct = Math.round(r.progress * 1000) / 10;
+      html += '<div class="route"><div class="track"><span class="code">' + esc(r.from) + '</span>' +
+        '<div class="line"><div class="done" style="width:' + pct + '%"></div><div class="craft" style="left:' + pct + '%">' + ICONS[r.kind] + '</div></div>' +
+        '<span class="code">' + esc(r.to) + '</span></div>' +
+        '<div class="times"><span>' + esc(r.left) + '</span><span>' + esc(r.right) + '</span></div>' +
+        (r.tag ? '<div class="tag' + (r.tag.live ? ' live' : '') + '"><i></i>' + esc(r.tag.text) + '</div>' : '') + '</div>';
+    }
+    html += '</section><div class="pair">' +
+      '<section class="card"><div class="label">Next</div><div class="next-title">' + esc(data.next ? data.next.title : '—') + '</div>' +
+        (data.next && data.next.sub ? '<div class="sub">' + esc(data.next.sub) + '</div>' : '') + '</section>';
+    if (data.countdown) {
+      html += '<section class="card"><div class="label">' + esc(data.countdown.label) + '</div><div class="count" id="count"></div>' +
+        '<div class="sub">' + esc(data.countdown.sub) + '</div></section>';
+    }
+    html += '</div>';
+    if (data.note) html += '<section class="card note">' + esc(data.note) + '</section>';
+    $('app').innerHTML = html;
+    tick();
+  }
+
+  function tick() {
+    if (data && data.countdown && $('count')) {
+      const left = Math.max(0, Date.parse(data.countdown.target) - Date.now());
+      const m = Math.floor(left / 60e3), d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60), mm = m % 60;
+      const u = (n, s) => n + '<small>' + s + '</small>';
+      $('count').innerHTML = d ? u(d, 'd') + u(String(h).padStart(2, '0'), 'h') + u(String(mm).padStart(2, '0'), 'm')
+                         : h ? u(h, 'h') + u(String(mm).padStart(2, '0'), 'm') : u(mm, 'm');
+      if (left === 0 && Date.now() - fetchedAt > 15e3) load();
+    }
+    if (fetchedAt) {
+      const s = Math.round((Date.now() - fetchedAt) / 1000);
+      $('ago').textContent = s < 60 ? 'Updated just now' : 'Updated ' + Math.floor(s / 60) + ' min ago';
+    }
+  }
+
+  async function load() {
+    if (!key) {
+      $('app').innerHTML = '<div class="msg"><strong>Open the link Dad sent you</strong>This page needs the family link to show where Dad is.</div>';
+      return;
+    }
+    try {
+      const res = await fetch(API + '?view=' + encodeURIComponent(key), { cache: 'no-store' });
+      const d = await res.json();
+      if (d.ok === false) {
+        $('app').innerHTML = '<div class="msg"><strong>This link no longer works</strong>Ask Dad for the new family link.</div>';
+        return;
+      }
+      data = d; fetchedAt = Date.now();
+      store.set('wd-last', JSON.stringify({ d: d, t: fetchedAt }));
+      if (d.title) store.set('wd-title', d.title);
+      $('warn').hidden = true;
+      render();
+    } catch (e) {
+      if (!data) {
+        const last = JSON.parse(store.get('wd-last') || 'null');
+        if (last) { data = last.d; fetchedAt = last.t; render(); }
+      }
+      $('warn').hidden = false;
+      $('warn').textContent = data ? 'Can’t reach the tracker right now. Showing the last update.' : 'Can’t reach the tracker right now. Check your connection.';
+    }
+  }
+
+  load();
+  setInterval(load, REFRESH_MS);
+  setInterval(tick, 15e3);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) load(); });
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+</body>
+</html>
