@@ -78,7 +78,8 @@
   .count small { font-size: .5em; font-weight: 600; color: var(--dim); margin: 0 4px 0 1px; }
 
   .note { font-size: 17px; font-style: italic; font-weight: 560; display: flex; gap: 10px; align-items: center; }
-  .note::before { content: "\201C"; font: 700 34px/0.6 Georgia, serif; color: var(--accent); }
+  .note::before, .note::after { content: "\201C"; font: 700 34px/0.6 Georgia, serif; color: var(--accent); }
+  .note::after { content: "\201D"; }
 
   .msg { text-align: center; color: var(--dim); font-size: 15px; line-height: 1.5; padding: 40px 12px; }
   .msg strong { display: block; color: var(--ink); font-size: 19px; margin-bottom: 6px; }
